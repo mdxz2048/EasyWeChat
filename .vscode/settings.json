@@ -1,0 +1,18 @@
+{
+    "files.associations": {
+        "sock5.h": "c",
+        "comm.h": "c",
+        "*.tcc": "c",
+        "exception": "c",
+        "memory_resource": "c",
+        "fstream": "c",
+        "iosfwd": "c",
+        "new": "c",
+        "ostream": "c",
+        "sstream": "c",
+        "streambuf": "c",
+        "cstdio": "c",
+        "types.h": "c",
+        "socket.h": "c"
+    }
+}
