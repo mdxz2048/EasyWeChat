@@ -1,6 +1,12 @@
-//
-// Created by mdxz (zhipeng2048@gmail.com)
-//
+/*
+ * @Author: MDXZ
+ * @Date: 2022-05-01 17:06:40
+ * @LastEditTime: 2022-05-02 08:37:05
+ * @LastEditors: MDXZ
+ * @Description: 
+ * @FilePath: /EasyWechat/sock/sock5.h
+ * 
+ */
 
 #ifndef MZZ_BRIDGE_C_SOCK5_H
 #define MZZ_BRIDGE_C_SOCK5_H

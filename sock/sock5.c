@@ -1,3 +1,12 @@
+/*
+ * @Author: MDXZ
+ * @Date: 2022-05-01 17:06:40
+ * @LastEditTime: 2022-05-02 08:44:54
+ * @LastEditors: MDXZ
+ * @Description: 
+ * @FilePath: /EasyWechat/sock/sock5.c
+ * 
+ */
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -5,6 +14,12 @@
 #include "comm.h"
 #include "sock5.h"
 
+/**
+ * @description: 
+ * @param {int} to_server
+ * @param {SOCKS5_AUTH_e} method
+ * @return {*}
+ */
 int sock5_method_request_send(const int to_server, const SOCKS5_AUTH_e method)
 {
     SOCKS5_METHOD_REQ_t req = {0};
