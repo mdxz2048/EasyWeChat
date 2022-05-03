@@ -6,7 +6,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define debug_printf(format,...)     printf("\033[30m\033[32m"format"\033[0m\n", ##__VA_ARGS__)
+#define debug_printf(format,...)      printf("\033[30m\033[32m["__FILE__"](%05d) - %s]\033[0m  "format"\n", __LINE__, __FUNCTION__,##__VA_ARGS__)
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 /**

@@ -1,7 +1,7 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-03 10:05:56
- * @LastEditTime: 2022-05-03 15:21:02
+ * @LastEditTime: 2022-05-03 15:46:20
  * @LastEditors: MDXZ
  * @Description:
  * @FilePath: /EasyWechat/src/socks_cs/server.c
@@ -19,6 +19,7 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include "server.h"
+#include "common.h"
 
 #define BUFSIZE 1024
 
@@ -55,20 +56,14 @@ int create_socks5_server_socket(u_int16_t port)
     /* let the system figure out our IP address */
     serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
     /* this is the port we will listen on */
-    serveraddr.sin_port = htons((unsigned short)portno);
+    serveraddr.sin_port = htons((unsigned short)port);
+
+    if (bind(parentfd, (struct sockaddr *)&serveraddr,
+             sizeof(serveraddr)) < 0)
+        error("ERROR on binding");
+
     if (listen(parentfd, 5) < 0) /* allow 5 requests to queue up */
         error("ERROR on listen");
-#if 1
-    hostp = gethostbyaddr((const char *)&clientaddr.sin_addr.s_addr,
-                          sizeof(clientaddr.sin_addr.s_addr), AF_INET);
-    if (hostp == NULL)
-        error("ERROR on gethostbyaddr");
-    hostaddrp = inet_ntoa(clientaddr.sin_addr);
-    if (hostaddrp == NULL)
-        error("ERROR on inet_ntoa\n");
-    printf("server established connection with %s (%s)\n",
-           hostp->h_name, hostaddrp);
-#endif
     return parentfd;
 }
 
@@ -137,11 +132,14 @@ int server_process_connect(int sock_client)
 
 void start_server(u_int16_t port, SOCKS5_AUTH_e method, u_int8_t username_len, u_int8_t *username, u_int8_t password_len, u_int8_t *password)
 {
+    struct hostent *hostp; /* client host info */
+    char *hostaddrp;       /* dotted decimal host addr string */
     struct sockaddr_in clientaddr;
     int clientaddr_len = sizeof(clientaddr);
     int socket_server = -1;
     int socket_client = -1;
     socket_server = create_socks5_server_socket(port);
+    debug_printf("create_socks5_server_socket success.PORT: %d", port);
     if (socket_server > 0)
     {
         char buf[1024 * 10] = {0};
@@ -149,7 +147,22 @@ void start_server(u_int16_t port, SOCKS5_AUTH_e method, u_int8_t username_len, u
         {
             socket_client = accept(socket_server, (struct sockaddr *)&clientaddr, &clientaddr_len);
             if (socket_client > 0)
+            {
+                hostp = gethostbyaddr((const char *)&clientaddr.sin_addr.s_addr,
+                                      sizeof(clientaddr.sin_addr.s_addr), AF_INET);
+                if (hostp == NULL)
+                    error("ERROR on gethostbyaddr");
+                hostaddrp = inet_ntoa(clientaddr.sin_addr);
+                if (hostaddrp == NULL)
+                    error("ERROR on inet_ntoa\n");
+                printf("server established connection with %s (%s)\n",
+                       hostp->h_name, hostaddrp);
                 server_process_connect(socket_client);
+            }
+            else
+            {
+                debug_printf("accept failed.");
+            }
         }
     }
     else
