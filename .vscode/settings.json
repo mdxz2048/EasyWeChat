@@ -15,6 +15,7 @@
         "types.h": "c",
         "socket.h": "c",
         "string.h": "c",
-        "inet.h": "c"
+        "inet.h": "c",
+        "in.h": "c"
     }
 }

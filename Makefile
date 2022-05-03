@@ -48,7 +48,7 @@ RM=rm -rf
 DBG_ENABLE   = 0
 ## need libs, add at here
 #RSU need add：diasgnss
-LIBS = m
+LIBS = pthread
 #使用的库目录，静态库和动态库添加在这里
 LIBRARY_PATH := $(ROOT_DIR)/lib  
 ## get all library path

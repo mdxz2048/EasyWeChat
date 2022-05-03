@@ -1,7 +1,7 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-01 17:06:40
- * @LastEditTime: 2022-05-03 10:02:55
+ * @LastEditTime: 2022-05-03 15:01:33
  * @LastEditors: MDXZ
  * @Description:
  * @FilePath: /EasyWechat/src/sock/sock5.c
@@ -201,39 +201,6 @@ int socks5_srv_build_request_process(int socket_client, const socks5_build_req_t
 		perror("send socks5_reply_t.");
 		return -1;
 	}
-	// proxy
-	if (sock_dst > 0)
-	{
-		char dst_buf[1024 * 10] = {0};
-
-		if (fork() == 0) // clild
-		{
-			char client_buf[1024 * 10] = {0};
-			char client_buf_encode[1024 * 10] = {0};
-			int recv_cnt = 0;
-			int ret = -1;
-			while (1)
-			{
-				recv_cnt = recv(sock_dst, client_buf, ARRAY_SIZE(client_buf), 0);
-				ret = send(socket_client, client_buf, recv_cnt, 0);
-				if (ret < 0)
-					perror("send err");
-			}
-		}
-		else
-		{
-			char dst_buf[1024 * 10] = {0};
-			int recv_cnt = 0;
-			int ret = -1;
-			while (1)
-			{
-				recv_cnt = recv(socket_client, dst_buf, ARRAY_SIZE(dst_buf), 0);
-				ret = send(sock_dst, dst_buf, recv_cnt, 0);
-				if (ret < 0)
-					perror("send err");
-			}
-		}
-	}
-
-	return 0;
+	
+	return (sock_dst>0)?sock_dst:-1;
 }

@@ -1,7 +1,7 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-01 17:18:37
- * @LastEditTime: 2022-05-03 07:59:39
+ * @LastEditTime: 2022-05-03 15:22:32
  * @LastEditors: MDXZ
  * @Description:
  * @FilePath: /EasyWechat/main.c
@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "common.h"
+#include "server.h"
 
 /*打印编译信息*/
 static char g_soft_info[2048] = {0};
@@ -35,17 +36,14 @@ void printf_soft_info()
 int main(int argc, char **argv)
 {
     printf_soft_info();
-    if (argc < 2)
-    {
-        printf("Please provide a hostname to resolve");
-        exit(1);
-    }
+    // if (argc < 2)
+    // {
+    //     printf("Please provide a hostname to resolve");
+    //     exit(1);
+    // }
 
-    char *hostname = argv[1];
-    char ip[100];
+    start_server(2080, SOCKS5_AUTH_PASSWORD,4,"mdxz", 3, "pwd");
 
-    comm_hostname_to_ip(hostname, ip);
-    printf("ip: %s\n", ip);
 
     return 0;
 }

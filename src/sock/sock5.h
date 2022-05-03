@@ -1,15 +1,15 @@
 /*
  * @Author      : MDXZ
  * @Date        : 2022-05-01 17: 06: 40
- * @LastEditTime: 2022-05-03 10:19:24
+ * @LastEditTime: 2022-05-03 15:11:44
  * @LastEditors: MDXZ
  * @Description : 
  * @FilePath: /EasyWechat/src/sock/sock5.h
  *
  */
 
-#ifndef MZZ_BRIDGE_C_SOCK5_H
-#define MZZ_BRIDGE_C_SOCK5_H
+#ifndef MDXZ_BRIDGE_C_SOCK5_H
+#define MDXZ_BRIDGE_C_SOCK5_H
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -180,6 +180,10 @@ typedef struct CLIENT_SOCKET{
  */
 int socks5_client_method_request_send(const int to_server, const SOCKS5_AUTH_e method);
 int socks5_srv_method_reply_send(const int to_client, const SOCKS5_METHOD_REQ_t *recv_req);
+int socks5_client_method_result_parse(const SOCKS5_METHOD_REPLY_t *reply);
+int socks5_client_build_request_send(const int sockfd_srv, const SOCKS5_CMD_e cmd, const SOCKS5_ATYP_e type, char *dst_addr, u_int16_t domain_len, u_int16_t dstPort);
+int socks5_srv_build_request_process(int socket_client, const socks5_build_req_t *recv_build_req);
+
 
 
 #endif // MZZ_BRIDGE_C_SOCK5_H
