@@ -1,7 +1,7 @@
 /*
  * @Author      : MDXZ
  * @Date        : 2022-05-01 17: 06: 40
- * @LastEditTime: 2022-05-03 10:00:30
+ * @LastEditTime: 2022-05-03 10:19:24
  * @LastEditors: MDXZ
  * @Description : 
  * @FilePath: /EasyWechat/src/sock/sock5.h
@@ -171,5 +171,15 @@ typedef struct CLIENT_SOCKET{
     SOCKS5_AUTH_e method;
     SOCKS5_AUTH_PASSWORD_t username_password;
 }CLIENT_SOCKET_t;
+
+/**
+ * @description:
+ * @param {int} to_server
+ * @param {SOCKS5_AUTH_e} method
+ * @return {*}
+ */
+int socks5_client_method_request_send(const int to_server, const SOCKS5_AUTH_e method);
+int socks5_srv_method_reply_send(const int to_client, const SOCKS5_METHOD_REQ_t *recv_req);
+
 
 #endif // MZZ_BRIDGE_C_SOCK5_H
