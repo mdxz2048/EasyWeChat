@@ -1,21 +1,24 @@
 /*
  * @Author      : MDXZ
  * @Date        : 2022-05-01 17: 06: 40
- * @LastEditTime: 2022-05-02 10: 27: 16
- * @LastEditors : MDXZ
+ * @LastEditTime: 2022-05-03 10:00:30
+ * @LastEditors: MDXZ
  * @Description : 
- * @FilePath    : /EasyWechat/sock/sock5.h
+ * @FilePath: /EasyWechat/src/sock/sock5.h
  *
  */
 
 #ifndef MZZ_BRIDGE_C_SOCK5_H
 #define MZZ_BRIDGE_C_SOCK5_H
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdbool.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include "comm.h"
+#include "common.h"
 
 #define SOCK5_VALIDATE_REQUEST_MAX_LENGTH 3
 #define SOCK5_BUILD_REQUEST_MAX_LENGTH 263
@@ -47,6 +50,19 @@ typedef enum
     SOCKS5_ATYP_DOMAIN = 0X03,
     SOCKS5_ATYP_IPv6   = 0X04,
 } SOCKS5_ATYP_e;
+
+typedef enum
+{
+    SOCKS5_REP_SUCCEEDED                  = 0X00,
+    SOCKS5_REP_SERVER_FAILURE             = 0x01,
+    SOCKS5_REP_CONNECTION_NOT_ALLOWED     = 0X02,
+    SOCKS5_REP_NETWORK_UNREACHABLE        = 0X03,
+    SOCKS5_REP_HOST_UNREACHABLE           = 0X04,
+    SOCKS5_REP_CONNECTION_REFUSED         = 0X05,
+    SOCKS5_REP_TTL_EXPIRED                = 0X06,
+    SOCKS5_REP_COMMAND_NOT_SUPPORTED      = 0X07,
+    SOCKS5_REP_ADDRESS_TYPE_NOT_SUPPORTED = 0X08,
+} SOCKS5_REP_e;
 
 /**
 +----+----------+----------+
@@ -139,13 +155,21 @@ typedef struct
 */
 typedef struct
 {
-    u_int8_t    version;
-    u_int8_t    rep;
-    u_int8_t    rsv;
-    u_int8_t    atyp;
-    u_int8_t    addrLength; // 地址长度
-    ADDR_u      bndAddr;
-    u_int16_t   bndPort;
+    u_int8_t        version;
+    SOCKS5_REP_e    rep;
+    u_int8_t        rsv;
+    SOCKS5_ATYP_e   atyp;
+    ADDR_u          bndAddr;
+    u_int16_t       bndPort;
 } socks5_reply_t;
+
+
+typedef struct CLIENT_SOCKET{
+    bool isvalid;
+    int  socket_srv;
+    int  socket_dst;
+    SOCKS5_AUTH_e method;
+    SOCKS5_AUTH_PASSWORD_t username_password;
+}CLIENT_SOCKET_t;
 
 #endif // MZZ_BRIDGE_C_SOCK5_H
