@@ -1,7 +1,7 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-01 17:06:40
- * @LastEditTime: 2022-05-03 15:01:33
+ * @LastEditTime: 2022-05-04 13:13:27
  * @LastEditors: MDXZ
  * @Description:
  * @FilePath: /EasyWechat/src/sock/sock5.c
@@ -15,21 +15,20 @@
 #include "sock5.h"
 #include <unistd.h>
 
-
 /**
  * @description:
  * @param {int} to_server
  * @param {SOCKS5_AUTH_e} method
  * @return {*}
  */
-int socks5_client_method_request_send(const int to_server, const SOCKS5_AUTH_e method)
+int socks5_client_method_request_send(const int socket_server, const SOCKS5_AUTH_e method)
 {
 	SOCKS5_METHOD_REQ_t req = {0};
 	req.version = SOCKS5_VERSION;
 	req.methodNum = 1;
 	req.methods[0] = method;
 
-	if (-1 == send(to_server, &req, sizeof(SOCKS5_METHOD_REQ_t), 0))
+	if (-1 == send(socket_server, &req, sizeof(SOCKS5_METHOD_REQ_t), 0))
 	{
 		return -1;
 	}
@@ -51,7 +50,7 @@ SOCKS5_AUTH_e socks5_srv_method_check(const u_int8_t method)
 		return SOCKS5_AUTH_INVALID;
 }
 
-int socks5_srv_method_reply_send(const int to_client, const SOCKS5_METHOD_REQ_t *recv_req)
+int socks5_srv_method_reply_send(const int socket_to_client, const SOCKS5_METHOD_REQ_t *recv_req)
 {
 	SOCKS5_METHOD_REPLY_t reply = {0};
 
@@ -67,7 +66,7 @@ int socks5_srv_method_reply_send(const int to_client, const SOCKS5_METHOD_REQ_t 
 	}
 
 	reply.method = socks5_srv_method_check(recv_req->methods[0]); /*only supports one method.SOCKS5_AUTH_PASSWORD*/
-	if (-1 == send(to_client, &reply, sizeof(SOCKS5_METHOD_REPLY_t), 0))
+	if (-1 == send(socket_to_client, &reply, sizeof(SOCKS5_METHOD_REPLY_t), 0))
 	{
 		return -1;
 	}
@@ -201,6 +200,15 @@ int socks5_srv_build_request_process(int socket_client, const socks5_build_req_t
 		perror("send socks5_reply_t.");
 		return -1;
 	}
-	
-	return (sock_dst>0)?sock_dst:-1;
+
+	return (sock_dst > 0) ? sock_dst : -1;
+}
+
+int socks5_client_build_reply_process(const socks5_reply_t *recv_reply)
+{
+	if (recv_reply->rep != SOCKS5_REP_SUCCEEDED)
+	{
+		return -1;
+	}
+	return 0;
 }

@@ -1,7 +1,0 @@
-#ifndef SOCKS_CLIENT_H
-#define SOCKS_CLIENT_H
-
-#include "sock5.h"
-
-
-#endif

@@ -1,7 +1,7 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-03 10:05:56
- * @LastEditTime: 2022-05-03 15:46:20
+ * @LastEditTime: 2022-05-04 08:43:21
  * @LastEditors: MDXZ
  * @Description:
  * @FilePath: /EasyWechat/src/socks_cs/server.c
@@ -26,7 +26,7 @@
 /*
  * error - wrapper for perror
  */
-void error(char *msg)
+static void error(char *msg)
 {
     perror(msg);
     exit(1);
