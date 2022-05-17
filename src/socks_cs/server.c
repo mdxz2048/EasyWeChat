@@ -1,10 +1,10 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-03 10:05:56
- * @LastEditTime : 2022-05-17 16:56:32
- * @LastEditors  : lv zhipeng
+ * @LastEditTime : 2022-05-17 19:43:52
+ * @LastEditors  : mdxz2048
  * @Description:
- * @FilePath     : /EasyWeChat/src/socks_cs/server.c
+ * @FilePath     : /EasyWechat/src/socks_cs/server.c
  *
  */
 
@@ -21,8 +21,11 @@
 #include "server.h"
 #include "common.h"
 #include <fcntl.h>
+#include <signal.h>
 
 #define BUFSIZE 1024
+
+static int socket_server = -1;
 
 /*
  * error - wrapper for perror
@@ -74,45 +77,74 @@ int create_socks5_server_socket(u_int32_t port)
     return sockfd;
 }
 
-void server_process_connect_thread(u_int32_t sock)
+void server_process_connect_thread(void *sock)
 {
     char read_buf[1024 * 10] = {0};
     int read_count = 0;
     int ret = 0;
     int socket_dst = 0;
-    int sock_client = sock;
+    int sock_client = (int)sock;
     uint16_t method_ok = -1;
+    CLIENT_SOCKET_t sock5 = {0};
 
     // int flags = fcntl(sock_client, F_GETFL, 0);
     // fcntl(sock_client, F_SETFL, flags | O_NONBLOCK);
-    while (1)
-    {
-        // method
-        bzero(read_buf, sizeof(read_buf));
-        read_count = recv(sock_client, read_buf, sizeof(read_buf), 0);
-        if (read_count > 0)
-        {
-            debug_printf("recvlen=%d\nrecv:  VER=%d\n", read_count, read_buf[0]);
-            debug_printf("recv:  NMETHODS=%d\n", read_buf[1]);
-            for (int i = 0; i < read_buf[1]; i++)
-            {
-                printf("METHODS[%d] = 0X%x\n", i, read_buf[2 + i]);
-            }
 
-            // socks5_srv_method_reply_send(sock_client, (const SOCKS5_METHOD_REQ_t *)read_buf);
-        }
-        else
+    // method
+    bzero(read_buf, sizeof(read_buf));
+    read_count = recv(sock_client, read_buf, sizeof(read_buf), 0);
+    if (read_count > 0)
+    {
+        /*check the sock version and method */
+        SOCKS5_METHOD_e method = 0;
+        if (socks5_server_parse_version_method(&method, read_buf, read_count) < 0)
         {
-            debug_printf("recv_count < 0\n");
+            debug_printf("socks5_server_parse_version_method() failed...\n");
+            goto err;
+        }
+        /*package the method and send to client*/
+        char method_reply[8] = {0};
+        u_int8_t method_reply_len = 0;
+        if (socks5_server_package_method_reply(method_reply, &method_reply_len, method < 0))
+        {
+            debug_printf("socks5_server_package_method_reply() failed");
+            goto err;
+        }
+        debug_printf("send method_len = %d\n", method_reply_len);
+        if (send(sock_client, method_reply, method_reply_len, 0) < 0)
+        {
+            debug_printf("socks5_server_package_method_reply() failed");
+            goto err;
         }
     }
+    else
+    {
+        debug_printf("recv_count < 0\n");
+        goto err;
+    }
+
+    bzero(read_buf, sizeof(read_buf));
+    read_count = recv(sock_client, read_buf, sizeof(read_buf), 0);
+    if (read_count > 0)
+    {
+        comm_print_hexdump(read_buf, read_count);
+    }
+err:
+    close(sock_client);
 }
 
 int server_process_connect(int sock_client)
 {
     pthread_t id;
-    server_process_connect_thread(sock_client);
-    // pthread_create(&id, NULL, (void *)func, sock_client);
+    // server_process_connect_thread(sock_client);
+    pthread_create(&id, NULL, (void *)server_process_connect_thread, (void *)sock_client);
+    pthread_detach(id);
+}
+void server_recv_signal_from_system(int signal_num)
+{
+    close(socket_server);
+    printf("recv signal %d\n", signal_num);
+    exit(1);
 }
 
 void start_server(u_int32_t port, SOCKS5_METHOD_e method, u_int8_t username_len, u_int8_t *username, u_int8_t password_len, u_int8_t *password)
@@ -121,8 +153,9 @@ void start_server(u_int32_t port, SOCKS5_METHOD_e method, u_int8_t username_len,
     char *hostaddrp;       /* dotted decimal host addr string */
     struct sockaddr clientaddr;
     int clientaddr_len = sizeof(clientaddr);
-    int socket_server = -1;
     int socket_client = -1;
+
+    signal(SIGINT, server_recv_signal_from_system);
     socket_server = create_socks5_server_socket(port);
     debug_printf("create_socks5_server_socket success.PORT: %d", port);
     if (socket_server > 0)

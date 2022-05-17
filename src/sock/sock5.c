@@ -1,3 +1,12 @@
+/*
+ * @Author       : mdxz2048
+ * @Date         : 2022-05-17 19:09:03
+ * @LastEditors  : mdxz2048
+ * @LastEditTime : 2022-05-17 19:19:04
+ * @FilePath     : /EasyWechat/src/sock/sock5.c
+ * @Description  : 
+ * 
+ */
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -79,6 +88,14 @@ int socks5_server_parse_version_method(SOCKS5_METHOD_e *method, const char *data
 	+----+--------+
  	| 1  |   1    |
  	+----+--------+
+ */
+
+/**
+ * @description: 
+ * @param {char} *data
+ * @param {u_int8_t} *data_len
+ * @param {SOCKS5_METHOD_e} methods
+ * @return {*}
  */
 int socks5_server_package_method_reply(char *data, u_int8_t *data_len, const SOCKS5_METHOD_e methods)
 {

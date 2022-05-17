@@ -175,6 +175,15 @@ typedef struct CLIENT_SOCKET{
 
 int socks5_client_package_version_method(char *data, u_int8_t *data_len, const u_int8_t nmethods_num, const SOCKS5_METHOD_e methods);
 int socks5_server_parse_version_method(SOCKS5_METHOD_e *method, const char *data, const u_int32_t data_len);
+/**
+ * @description: 
+ * @param {char} *data
+ * @param {u_int8_t} *data_len
+ * @param {SOCKS5_METHOD_e} methods
+ * @return {*}
+ */
+int socks5_server_package_method_reply(char *data, u_int8_t *data_len, const SOCKS5_METHOD_e methods);
+
 
 
 

@@ -17,5 +17,13 @@
  */
 int comm_hostname_to_ip(char *hostname , char *ip);
 
+/**
+ * @description: print in hex format
+ * @param {unsigned char} *buf
+ * @param {int} num
+ * @return {*}
+ */
+void comm_print_hexdump(const unsigned char *buf, const int num);
+
 
 #endif

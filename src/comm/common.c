@@ -1,10 +1,10 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-03 07:51:32
- * @LastEditTime: 2022-05-03 07:58:14
- * @LastEditors: MDXZ
+ * @LastEditTime : 2022-05-17 19:34:53
+ * @LastEditors  : mdxz2048
  * @Description: 
- * @FilePath: /EasyWechat/src/comm/common.c
+ * @FilePath     : /EasyWechat/src/comm/common.c
  * 
  */
 #include<stdio.h> //printf
@@ -44,4 +44,23 @@ int comm_hostname_to_ip(char *hostname , char *ip)
 	}
 	
 	return -1;
+}
+
+/**
+ * @description: 
+ * @param {unsigned char} *buf
+ * @param {int} num
+ * @return {*}
+ */
+void comm_print_hexdump(const unsigned char *buf, const int num)
+{
+    int i;
+    for (i = 0; i < num; i++)
+    {
+        printf("%02X ", buf[i]);
+        if ((i + 1) % 24 == 0)
+            printf("\n");
+    }
+    printf("\n");
+    return;
 }
