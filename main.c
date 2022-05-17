@@ -1,10 +1,10 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-01 17:18:37
- * @LastEditTime: 2022-05-03 15:22:32
- * @LastEditors: MDXZ
+ * @LastEditTime : 2022-05-17 16:54:31
+ * @LastEditors  : lv zhipeng
  * @Description:
- * @FilePath: /EasyWechat/main.c
+ * @FilePath     : /EasyWeChat/main.c
  *
  */
 #include <stdlib.h>
@@ -42,7 +42,7 @@ int main(int argc, char **argv)
     //     exit(1);
     // }
 
-    start_server(2080, SOCKS5_AUTH_PASSWORD,4,"mdxz", 3, "pwd");
+    start_server(20480, SOCKS5_AUTH_PASSWORD,4,"mdxz", 3, "pwd");
 
 
     return 0;

@@ -1,10 +1,10 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-03 10:05:56
- * @LastEditTime: 2022-05-04 08:43:21
- * @LastEditors: MDXZ
+ * @LastEditTime : 2022-05-17 16:56:32
+ * @LastEditors  : lv zhipeng
  * @Description:
- * @FilePath: /EasyWechat/src/socks_cs/server.c
+ * @FilePath     : /EasyWeChat/src/socks_cs/server.c
  *
  */
 
@@ -20,6 +20,7 @@
 #include <pthread.h>
 #include "server.h"
 #include "common.h"
+#include <fcntl.h>
 
 #define BUFSIZE 1024
 
@@ -32,94 +33,77 @@ static void error(char *msg)
     exit(1);
 }
 
-int create_socks5_server_socket(u_int16_t port)
+int create_socks5_server_socket(u_int32_t port)
 {
-    int parentfd;                  /* parent socket */
-    int childfd;                   /* child socket */
-    int portno;                    /* port to listen on */
-    int clientlen;                 /* byte size of client's address */
-    struct sockaddr_in serveraddr; /* server's addr */
-    struct sockaddr_in clientaddr; /* client addr */
-    struct hostent *hostp;         /* client host info */
-    char buf[BUFSIZE];             /* message buffer */
-    char *hostaddrp;               /* dotted decimal host addr string */
-    int optval;                    /* flag value for setsockopt */
-    int n;                         /* message byte size */
+    int sockfd, connfd, len;
+    struct sockaddr_in servaddr, cli;
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd == -1)
+    {
+        printf("socket creation failed...\n");
+        exit(0);
+    }
+    else
+        printf("Socket successfully created..\n");
+    bzero(&servaddr, sizeof(servaddr));
 
-    parentfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (parentfd < 0)
-        perror("ERROR opening socket");
+    // assign IP, PORT
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    servaddr.sin_port = htons(port);
 
-    bzero((char *)&serveraddr, sizeof(serveraddr));
-    /* this is an Internet address */
-    serveraddr.sin_family = AF_INET;
-    /* let the system figure out our IP address */
-    serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    /* this is the port we will listen on */
-    serveraddr.sin_port = htons((unsigned short)port);
+    // Binding newly created socket to given IP and verification
+    if ((bind(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr))) != 0)
+    {
+        printf("socket bind failed...\n");
+        exit(0);
+    }
+    else
+        printf("Socket successfully binded..\n");
 
-    if (bind(parentfd, (struct sockaddr *)&serveraddr,
-             sizeof(serveraddr)) < 0)
-        error("ERROR on binding");
+    // Now server is ready to listen and verification
+    if ((listen(sockfd, 5)) != 0)
+    {
+        printf("Listen failed...\n");
+        exit(0);
+    }
+    else
+        printf("Server listening..\n");
+    len = sizeof(cli);
 
-    if (listen(parentfd, 5) < 0) /* allow 5 requests to queue up */
-        error("ERROR on listen");
-    return parentfd;
+    return sockfd;
 }
 
-void server_process_connect_thread(void *sock)
+void server_process_connect_thread(u_int32_t sock)
 {
     char read_buf[1024 * 10] = {0};
     int read_count = 0;
     int ret = 0;
     int socket_dst = 0;
-    int sock_client = *(int *)sock;
-    // method
-    bzero(read_buf, sizeof(read_buf));
-    read_count = recv(sock_client, read_buf, sizeof(read_buf), 0);
-    if (read_count)
-    {
-        socks5_srv_method_reply_send(sock_client, (const SOCKS5_METHOD_REQ_t *)read_buf);
-    }
-    // build
-    bzero(read_buf, sizeof(read_buf));
-    read_count = recv(sock_client, read_buf, sizeof(read_buf), 0);
-    if (read_count)
-    {
-        socket_dst = socks5_srv_build_request_process(sock_client, (const socks5_build_req_t *)read_buf);
-    }
+    int sock_client = sock;
+    uint16_t method_ok = -1;
 
-    // proxy
-    if (socket_dst > 0)
+    // int flags = fcntl(sock_client, F_GETFL, 0);
+    // fcntl(sock_client, F_SETFL, flags | O_NONBLOCK);
+    while (1)
     {
-        char dst_buf[1024 * 10] = {0};
-
-        if (fork() == 0) // clild
+        // method
+        bzero(read_buf, sizeof(read_buf));
+        read_count = recv(sock_client, read_buf, sizeof(read_buf), 0);
+        if (read_count > 0)
         {
-            char client_buf[1024 * 10] = {0};
-            char client_buf_encode[1024 * 10] = {0};
-            int recv_cnt = 0;
-            int ret = -1;
-            while (1)
+            debug_printf("recvlen=%d\nrecv:  VER=%d\n", read_count, read_buf[0]);
+            debug_printf("recv:  NMETHODS=%d\n", read_buf[1]);
+            for (int i = 0; i < read_buf[1]; i++)
             {
-                recv_cnt = recv(socket_dst, client_buf, ARRAY_SIZE(client_buf), 0);
-                ret = send(sock_client, client_buf, recv_cnt, 0);
-                if (ret < 0)
-                    perror("send err");
+                printf("METHODS[%d] = 0X%x\n", i, read_buf[2 + i]);
             }
+
+            // socks5_srv_method_reply_send(sock_client, (const SOCKS5_METHOD_REQ_t *)read_buf);
         }
         else
         {
-            char dst_buf[1024 * 10] = {0};
-            int recv_cnt = 0;
-            int ret = -1;
-            while (1)
-            {
-                recv_cnt = recv(sock_client, dst_buf, ARRAY_SIZE(dst_buf), 0);
-                ret = send(socket_dst, dst_buf, recv_cnt, 0);
-                if (ret < 0)
-                    perror("send err");
-            }
+            debug_printf("recv_count < 0\n");
         }
     }
 }
@@ -127,14 +111,15 @@ void server_process_connect_thread(void *sock)
 int server_process_connect(int sock_client)
 {
     pthread_t id;
-    pthread_create(&id, NULL, (void *)server_process_connect_thread, (void *)&sock_client);
+    server_process_connect_thread(sock_client);
+    // pthread_create(&id, NULL, (void *)func, sock_client);
 }
 
-void start_server(u_int16_t port, SOCKS5_AUTH_e method, u_int8_t username_len, u_int8_t *username, u_int8_t password_len, u_int8_t *password)
+void start_server(u_int32_t port, SOCKS5_METHOD_e method, u_int8_t username_len, u_int8_t *username, u_int8_t password_len, u_int8_t *password)
 {
     struct hostent *hostp; /* client host info */
     char *hostaddrp;       /* dotted decimal host addr string */
-    struct sockaddr_in clientaddr;
+    struct sockaddr clientaddr;
     int clientaddr_len = sizeof(clientaddr);
     int socket_server = -1;
     int socket_client = -1;
@@ -146,17 +131,19 @@ void start_server(u_int16_t port, SOCKS5_AUTH_e method, u_int8_t username_len, u
         while (1)
         {
             socket_client = accept(socket_server, (struct sockaddr *)&clientaddr, &clientaddr_len);
+            // Accept the data packet from client and verification
             if (socket_client > 0)
             {
-                hostp = gethostbyaddr((const char *)&clientaddr.sin_addr.s_addr,
-                                      sizeof(clientaddr.sin_addr.s_addr), AF_INET);
-                if (hostp == NULL)
-                    error("ERROR on gethostbyaddr");
-                hostaddrp = inet_ntoa(clientaddr.sin_addr);
-                if (hostaddrp == NULL)
-                    error("ERROR on inet_ntoa\n");
-                printf("server established connection with %s (%s)\n",
-                       hostp->h_name, hostaddrp);
+                // hostp = gethostbyaddr((const char *)&clientaddr.sin_addr.s_addr,
+                //                       sizeof(clientaddr.sin_addr.s_addr), AF_INET);
+                // if (hostp == NULL)
+                //     error("ERROR on gethostbyaddr");
+                // hostaddrp = inet_ntoa(clientaddr.sin_addr);
+                // if (hostaddrp == NULL)
+                //     error("ERROR on inet_ntoa\n");
+                // printf("server established connection with %s (%s)\n",
+                //        hostp->h_name, hostaddrp);
+                debug_printf("server accept the client...\n");
                 server_process_connect(socket_client);
             }
             else

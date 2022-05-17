@@ -35,7 +35,7 @@ typedef enum
     SOCKS5_AUTH_PASSWORD      = 0X02,
     ISOCKS5_AUTH_ANA_ASSIGNED = 0x03,
     SOCKS5_AUTH_INVALID       = 0XFF,
-} SOCKS5_AUTH_e;
+} SOCKS5_METHOD_e;
 
 typedef enum
 {
@@ -75,7 +75,7 @@ typedef struct
 {
     u_int8_t version; /*0x05*/
     u_int8_t methodNum;
-    SOCKS5_AUTH_e methods[1];
+    SOCKS5_METHOD_e methods[1];
 } SOCKS5_METHOD_REQ_t;
 
 /*
@@ -88,7 +88,7 @@ typedef struct
 typedef struct
 {
     u_int8_t version;
-    SOCKS5_AUTH_e method; /*0xFF is none*/
+    SOCKS5_METHOD_e method; /*0xFF is none*/
 } SOCKS5_METHOD_REPLY_t;
 
 typedef struct
@@ -165,25 +165,17 @@ typedef struct
 
 
 typedef struct CLIENT_SOCKET{
-    bool isvalid;
+    bool isvalid;//该客户端有效标志位
+    int  socket_client;//客户端socket
     int  socket_srv;
     int  socket_dst;
-    SOCKS5_AUTH_e method;
+    SOCKS5_METHOD_e method;
     SOCKS5_AUTH_PASSWORD_t username_password;
 }CLIENT_SOCKET_t;
 
-/**
- * @description:
- * @param {int} to_server
- * @param {SOCKS5_AUTH_e} method
- * @return {*}
- */
-int socks5_client_method_request_send(const int socket_server, const SOCKS5_AUTH_e method);
-int socks5_srv_method_reply_send(const int to_client, const SOCKS5_METHOD_REQ_t *recv_req);
-int socks5_client_method_result_parse(const SOCKS5_METHOD_REPLY_t *reply);
-int socks5_client_build_request_send(const int sockfd_srv, const SOCKS5_CMD_e cmd, const SOCKS5_ATYP_e type, char *dst_addr, u_int16_t domain_len, u_int16_t dstPort);
-int socks5_srv_build_request_process(int socket_client, const socks5_build_req_t *recv_build_req);
-int socks5_client_build_reply_process(const socks5_reply_t *recv_reply);
+int socks5_client_package_version_method(char *data, u_int8_t *data_len, const u_int8_t nmethods_num, const SOCKS5_METHOD_e methods);
+int socks5_server_parse_version_method(SOCKS5_METHOD_e *method, const char *data, const u_int32_t data_len);
+
 
 
 

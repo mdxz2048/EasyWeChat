@@ -17,6 +17,7 @@
         "string.h": "c",
         "inet.h": "c",
         "in.h": "c",
-        "client-h": "c"
+        "client-h": "c",
+        "netdb.h": "c"
     }
 }
