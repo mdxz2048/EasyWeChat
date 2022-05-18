@@ -2,7 +2,7 @@
  * @Author       : mdxz2048
  * @Date         : 2022-05-17 19:09:03
  * @LastEditors  : lv zhipeng
- * @LastEditTime : 2022-05-18 09:22:11
+ * @LastEditTime : 2022-05-18 10:51:46
  * @FilePath     : /EasyWeChat/src/sock/sock5.c
  * @Description  :
  *
@@ -114,28 +114,43 @@ int socks5_server_package_method_reply(char *data, u_int8_t *data_len, const SOC
 	| 1  |  1  | X'00' |  1   | Variable |    2     |
 	+----+-----+-------+------+----------+----------+
 */
-int socks5_client_package_request(char *data, u_int32_t *data_len, const SOCKS5_CMD_e cmd, const SOCKS5_ATYP_e address_type, const char *dst_addr, const u_int32_t dst_addr_len, const u_int16_t dst_port)
+int socks5_client_package_request(char *data, u_int32_t *data_len, const SOCKS5_REQUEST_t *req)
 {
 	char request[256] = {0};
 	u_int32_t len = 0;
 	// VER
 	request[len] = 0x05;
+	len++;
 	// CMD
+	request[len] = req->cmd;
 	len++;
-	request[len] = cmd;
 	// RSV
-	len++;
 	request[len] = 0x0;
+	len++;
 	// ATYP
+	request[len] = req->atyp;
 	len++;
-	request[len] = address_type;
 	// DST.ADDR
-	len++;
-	memcpy(&request[len], dst_addr, dst_addr_len);
-	// DST.PORT
-	len += dst_addr_len;
-	memcpy(&request[len], dst_port, sizeof(dst_port));
-	len += sizeof(dst_port);
+	switch (req->atyp)
+	{
+	case SOCKS5_ATYP_IPv4:
+		memcpy(&request[len], req->dst_addr.addr_ipv4, SOCKS5_ADDR_IPV4_LENGTH);
+		len += SOCKS5_ADDR_IPV4_LENGTH;
+		break;
+	case SOCKS5_ATYP_IPv6:
+		memcpy(&request[len], req->dst_addr.addr_ipv6, SOCKS5_ADDR_IPV6_LENGTH);
+		len += SOCKS5_ADDR_IPV6_LENGTH;
+		break;
+	case SOCKS5_ATYP_DOMAIN:
+		memcpy(&request[len], &(req->dst_addr.addr_domain.domain_len), 1);
+		len += 1;
+		memcpy(&request[len], req->dst_addr.addr_domain.domain, req->dst_addr.addr_domain.domain_len);
+		len += req->dst_addr.addr_domain.domain_len;
+		break;
+	}
+	// DST.PORT 2 Byte
+	memcpy(&request[len], &(req->dst_port), 2);
+	len += 2;
 
 	memcpy(data, request, len);
 	*data_len = len;
@@ -143,6 +158,54 @@ int socks5_client_package_request(char *data, u_int32_t *data_len, const SOCKS5_
 	return 0;
 }
 
+int socks5_server_parse_request(SOCKS5_REQUEST_t *req, const char *data, const u_int32_t data_len)
+{
+	u_int32_t offset = 0;
+	// VER
+	req->version = *data;
+	offset++;
+	// CMD
+	req->cmd = *(data + offset);
+	offset++;
+	// RSV
+	offset++;
+	// ATYP
+	req->atyp = *(data + offset);
+	offset++;
+	// DST.ADDR
+	switch (req->atyp)
+	{
+	case SOCKS5_ATYP_IPv4:
+	{
+		uint32_t network_addr = 0;
+		memcpy(&network_addr, data + offset, SOCKS5_ADDR_IPV4_LENGTH);
+		req->dst_addr.addr_ipv4 = ntohl(network_addr);
+		offset += SOCKS5_ADDR_IPV4_LENGTH;
+		break;
+	}
+	case SOCKS5_ATYP_IPv6:
+		memcpy(req->dst_addr.addr_ipv6, data + offset, SOCKS5_ADDR_IPV6_LENGTH);
+		offset += SOCKS5_ADDR_IPV6_LENGTH;
+		break;
+	case SOCKS5_ATYP_DOMAIN:
+		memcpy(&(req->dst_addr.addr_domain.domain_len), data + offset, 1);
+		offset += 1;
+		memcpy(req->dst_addr.addr_domain.domain, data + offset, req->dst_addr.addr_domain.domain_len);
+		offset += req->dst_addr.addr_domain.domain_len;
+		break;
+	}
+	// DST.PORT
+	uint16_t network_short = 0;
+	memcpy(&network_short, data + offset, 2);
+	req->dst_port = ntohs(network_short); // network to host short
+	offset += 2;
+	if (req->atyp == SOCKS5_ATYP_DOMAIN)
+		debug_printf("req:\nversion:0x%x\ncmd:0x%x\naddress_type:0x%x\naddr:%s\nport:%d\n", req->version, req->cmd, req->atyp, req->dst_addr.addr_domain.domain, req->dst_port);
+	else
+		debug_printf("req:\nversion:0x%x\ncmd:0x%x\naddress_type:0x%x\naddr:%ld\nport:%d\n", req->version, req->cmd, req->atyp, req->dst_addr.addr_ipv4, req->dst_port);
+
+	return 0;
+}
 /*
 	+----+-----+-------+------+----------+----------+
 	|VER | REP |  RSV  | ATYP | BND.ADDR | BND.PORT |
@@ -170,7 +233,7 @@ int socks5_server_package_request_reply(char *data, u_int32_t *data_len, const S
 	memcpy(&replies[len], bound_addr, bound_addr_len);
 	// DST.PORT
 	len += bound_addr_len;
-	memcpy(&replies[len], bound_port, sizeof(bound_port));
+	memcpy(&replies[len], &(bound_port), sizeof(bound_port));
 	len += sizeof(bound_port);
 
 	memcpy(data, replies, len);

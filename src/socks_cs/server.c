@@ -1,10 +1,10 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-03 10:05:56
- * @LastEditTime : 2022-05-17 19:43:52
- * @LastEditors  : mdxz2048
+ * @LastEditTime : 2022-05-18 10:30:09
+ * @LastEditors  : lv zhipeng
  * @Description:
- * @FilePath     : /EasyWechat/src/socks_cs/server.c
+ * @FilePath     : /EasyWeChat/src/socks_cs/server.c
  *
  */
 
@@ -90,7 +90,7 @@ void server_process_connect_thread(void *sock)
     // int flags = fcntl(sock_client, F_GETFL, 0);
     // fcntl(sock_client, F_SETFL, flags | O_NONBLOCK);
 
-    // method
+    // method and reply to client
     bzero(read_buf, sizeof(read_buf));
     read_count = recv(sock_client, read_buf, sizeof(read_buf), 0);
     if (read_count > 0)
@@ -122,12 +122,15 @@ void server_process_connect_thread(void *sock)
         debug_printf("recv_count < 0\n");
         goto err;
     }
-
+    // recv request form client
     bzero(read_buf, sizeof(read_buf));
     read_count = recv(sock_client, read_buf, sizeof(read_buf), 0);
     if (read_count > 0)
     {
+
         comm_print_hexdump(read_buf, read_count);
+        SOCKS5_REQUEST_t *req = (SOCKS5_REQUEST_t *)calloc(1, sizeof(SOCKS5_REQUEST_t));
+        socks5_server_parse_request(req, read_buf, read_count);
     }
 err:
     close(sock_client);
