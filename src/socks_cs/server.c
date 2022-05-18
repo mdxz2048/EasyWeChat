@@ -1,7 +1,7 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-03 10:05:56
- * @LastEditTime : 2022-05-18 10:30:09
+ * @LastEditTime : 2022-05-18 15:18:44
  * @LastEditors  : lv zhipeng
  * @Description:
  * @FilePath     : /EasyWeChat/src/socks_cs/server.c
@@ -22,6 +22,7 @@
 #include "common.h"
 #include <fcntl.h>
 #include <signal.h>
+#include "tcp_client.h"
 
 #define BUFSIZE 1024
 
@@ -85,7 +86,7 @@ void server_process_connect_thread(void *sock)
     int socket_dst = 0;
     int sock_client = (int)sock;
     uint16_t method_ok = -1;
-    CLIENT_SOCKET_t sock5 = {0};
+    SOCKS5_CLIENT_INFO_t sock5_client_info = {0};
 
     // int flags = fcntl(sock_client, F_GETFL, 0);
     // fcntl(sock_client, F_SETFL, flags | O_NONBLOCK);
@@ -102,6 +103,9 @@ void server_process_connect_thread(void *sock)
             debug_printf("socks5_server_parse_version_method() failed...\n");
             goto err;
         }
+        sock5_client_info.isvalid = true;
+        sock5_client_info.socket_client = sock_client;
+        sock5_client_info.method = method;
         /*package the method and send to client*/
         char method_reply[8] = {0};
         u_int8_t method_reply_len = 0;
@@ -131,6 +135,14 @@ void server_process_connect_thread(void *sock)
         comm_print_hexdump(read_buf, read_count);
         SOCKS5_REQUEST_t *req = (SOCKS5_REQUEST_t *)calloc(1, sizeof(SOCKS5_REQUEST_t));
         socks5_server_parse_request(req, read_buf, read_count);
+        if (req->cmd == SOCKS5_CMD_CONNECT)
+        {
+            sock5_client_info.socket_dst = tcp_create_client(req->atyp, &(req->dst_addr), req->dst_port);
+            if (sock5_client_info.socket_dst > 0)
+            {
+                
+            }
+        }
     }
 err:
     close(sock_client);

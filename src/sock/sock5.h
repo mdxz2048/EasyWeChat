@@ -167,13 +167,12 @@ typedef struct
 
 typedef struct CLIENT_SOCKET
 {
-    bool isvalid;      //该客户端有效标志位
-    int socket_client; //客户端socket
-    int socket_srv;
-    int socket_dst;
-    SOCKS5_METHOD_e method;
+    bool isvalid;           //该客户端有效标志位
+    int socket_client;      // socks5客户端socket
+    SOCKS5_METHOD_e method; // socks5认证方法
+    int socket_dst;         // socks5服务的与目标服务器连接的socket
     SOCKS5_AUTH_PASSWORD_t username_password;
-} CLIENT_SOCKET_t;
+} SOCKS5_CLIENT_INFO_t;
 
 int socks5_client_package_version_method(char *data, u_int8_t *data_len, const u_int8_t nmethods_num, const SOCKS5_METHOD_e methods);
 int socks5_server_parse_version_method(SOCKS5_METHOD_e *method, const char *data, const u_int32_t data_len);
