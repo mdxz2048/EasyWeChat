@@ -1,7 +1,7 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-03 10:05:56
- * @LastEditTime : 2022-05-18 15:18:44
+ * @LastEditTime : 2022-05-18 15:59:44
  * @LastEditors  : lv zhipeng
  * @Description:
  * @FilePath     : /EasyWeChat/src/socks_cs/server.c
@@ -131,7 +131,6 @@ void server_process_connect_thread(void *sock)
     read_count = recv(sock_client, read_buf, sizeof(read_buf), 0);
     if (read_count > 0)
     {
-
         comm_print_hexdump(read_buf, read_count);
         SOCKS5_REQUEST_t *req = (SOCKS5_REQUEST_t *)calloc(1, sizeof(SOCKS5_REQUEST_t));
         socks5_server_parse_request(req, read_buf, read_count);
@@ -140,7 +139,41 @@ void server_process_connect_thread(void *sock)
             sock5_client_info.socket_dst = tcp_create_client(req->atyp, &(req->dst_addr), req->dst_port);
             if (sock5_client_info.socket_dst > 0)
             {
-                
+                SOCKS5_REQUEST_REPLY_t req_reply_info = {0};
+                req_reply_info.version = 0x05;
+                req_reply_info.rep = SOCKS5_REP_SUCCEEDED;
+                req_reply_info.rsv = 0;
+                req_reply_info.atyp = req->atyp;
+                req_reply_info.bndAddr = req->dst_addr;
+                req_reply_info.bndPort = req->dst_port;
+
+                char req_reply[128] = {0};
+                u_int32_t req_reply_len = 0;
+                if (socks5_server_package_request_reply(req_reply, &req_reply_len, &req_reply_info) < 0)
+                {
+                    debug_printf("socks5_server_package_request_reply() failed.");
+                }
+                else
+                {
+                    debug_printf("send request reply:");
+                    comm_print_hexdump(req_reply, req_reply_len);
+                    if (send(sock5_client_info.socket_client, req_reply, req_reply_len, 0) < 0)
+                    {
+                        debug_printf("send req_reply error.");
+                    }
+                    else
+                    {
+                        bzero(read_buf, sizeof(read_buf));
+                        read_count = recv(sock_client, read_buf, sizeof(read_buf), 0);
+                        if (read_count > 0)
+                        {
+                            debug_printf("recv %s ", read_buf);
+                        }
+                    }
+                }
+            }else 
+            {
+                debug_printf("tcp_create_client faild.");
             }
         }
     }

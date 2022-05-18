@@ -2,7 +2,7 @@
  * @Author       : mdxz2048
  * @Date         : 2022-05-17 19:09:03
  * @LastEditors  : lv zhipeng
- * @LastEditTime : 2022-05-18 15:05:54
+ * @LastEditTime : 2022-05-18 15:59:15
  * @FilePath     : /EasyWeChat/src/sock/sock5.c
  * @Description  :
  *
@@ -134,7 +134,7 @@ int socks5_client_package_request(char *data, u_int32_t *data_len, const SOCKS5_
 	switch (req->atyp)
 	{
 	case SOCKS5_ATYP_IPv4:
-		memcpy(&request[len], req->dst_addr.addr_ipv4, SOCKS5_ADDR_IPV4_LENGTH);
+		memcpy(&request[len], &(req->dst_addr.addr_ipv4), SOCKS5_ADDR_IPV4_LENGTH);
 		len += SOCKS5_ADDR_IPV4_LENGTH;
 		break;
 	case SOCKS5_ATYP_IPv6:
@@ -202,7 +202,7 @@ int socks5_server_parse_request(SOCKS5_REQUEST_t *req, const char *data, const u
 	if (req->atyp == SOCKS5_ATYP_DOMAIN)
 		debug_printf("req:\nversion:0x%x\ncmd:0x%x\naddress_type:0x%x\naddr:%s\nport:%d\n", req->version, req->cmd, req->atyp, req->dst_addr.addr_domain.domain, req->dst_port);
 	else
-		debug_printf("req:\nversion:0x%x\ncmd:0x%x\naddress_type:0x%x\naddr:%ld\nport:%d\n", req->version, req->cmd, req->atyp, req->dst_addr.addr_ipv4, req->dst_port);
+		debug_printf("req:\nversion:0x%x\ncmd:0x%x\naddress_type:0x%d\naddr:%ld\nport:%d\n", req->version, req->cmd, req->atyp, req->dst_addr.addr_ipv4, req->dst_port);
 
 	return 0;
 }
@@ -213,30 +213,40 @@ int socks5_server_parse_request(SOCKS5_REQUEST_t *req, const char *data, const u
 	| 1  |  1  | X'00' |  1   | Variable |    2     |
 	+----+-----+-------+------+----------+----------+
 */
-int socks5_server_package_request_reply(char *data, u_int32_t *data_len, const SOCKS5_REP_e rep, const SOCKS5_ATYP_e address_type, const char *bound_addr, const u_int32_t bound_addr_len, const u_int16_t bound_port)
+int socks5_server_package_request_reply(char *data, u_int32_t *data_len, const SOCKS5_REQUEST_REPLY_t *reply)
 {
 	char replies[256] = {0};
-	u_int32_t len = 0;
+	u_int32_t offset = 0;
 	// VER
-	replies[len] = 0x05;
+	replies[offset] = 0x05;
+	offset++;
 	// REP
-	len++;
-	replies[len] = rep;
+	replies[offset] = reply->rep;
+	offset++;
 	// RSV
-	len++;
-	replies[len] = 0x0;
+	replies[offset] = 0x0;
+	offset++;
 	// ATYP
-	len++;
-	replies[len] = address_type;
+	replies[offset] = reply->atyp;
+	offset++;
 	// DST.ADDR
-	len++;
-	memcpy(&replies[len], bound_addr, bound_addr_len);
+	switch (reply->atyp)
+	{
+	case SOCKS5_ATYP_IPv4:
+	{
+		uint32_t network_addr = 0;
+		network_addr = htonl(reply->bndAddr.addr_ipv4);
+		memcpy(&replies[offset], &network_addr, SOCKS5_ADDR_IPV4_LENGTH);
+		offset += SOCKS5_ADDR_IPV4_LENGTH;
+		break;
+	}
+	}
 	// DST.PORT
-	len += bound_addr_len;
-	memcpy(&replies[len], &(bound_port), sizeof(bound_port));
-	len += sizeof(bound_port);
+	u_int16_t network_port = htons(reply->bndPort);
+	memcpy(&replies[offset], &network_port, network_port);
+	offset += sizeof(network_port);
 
-	memcpy(data, replies, len);
-	*data_len = len;
+	memcpy(data, replies, offset);
+	*data_len = offset;
 	return 0;
 }

@@ -2,7 +2,7 @@
  * @Author       : lv zhipeng
  * @Date         : 2022-05-18 14:28:38
  * @LastEditors  : lv zhipeng
- * @LastEditTime : 2022-05-18 15:05:17
+ * @LastEditTime : 2022-05-18 16:20:49
  * @FilePath     : /EasyWeChat/src/tcp/tcp_client.c
  * @Description  :
  *
@@ -41,7 +41,7 @@ int tcp_create_client_by_ipv4(uint32_t addr_ipv4, u_int16_t dst_port)
 
     /* build the server's Internet address */
     serveraddr.sin_family = AF_INET;
-    serveraddr.sin_addr.s_addr = htonl(addr_ipv4);
+    serveraddr.sin_addr = htonl(addr_ipv4);
     serveraddr.sin_port = htons(portno);
 
     /* connect: create a connection with the server */
