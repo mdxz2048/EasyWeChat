@@ -1,11 +1,11 @@
 /*
  * @Author       : mdxz2048
  * @Date         : 2022-05-17 19:09:03
- * @LastEditors  : mdxz2048
- * @LastEditTime : 2022-05-17 19:19:04
- * @FilePath     : /EasyWechat/src/sock/sock5.c
- * @Description  : 
- * 
+ * @LastEditors  : lv zhipeng
+ * @LastEditTime : 2022-05-18 09:22:11
+ * @FilePath     : /EasyWeChat/src/sock/sock5.c
+ * @Description  :
+ *
  */
 #include <string.h>
 #include <stdlib.h>
@@ -33,7 +33,7 @@ int socks5_client_package_version_method(char *data, u_int8_t *data_len, const u
 	data_len++;
 	*(data + len) = methods;
 
-	*data_len = len + 1;
+	*data_len = len;
 
 	return 0;
 }
@@ -83,15 +83,15 @@ int socks5_server_parse_version_method(SOCKS5_METHOD_e *method, const char *data
 }
 
 /**
- 	+----+--------+
+	+----+--------+
 	|VER | METHOD |
 	+----+--------+
- 	| 1  |   1    |
- 	+----+--------+
+	| 1  |   1    |
+	+----+--------+
  */
 
 /**
- * @description: 
+ * @description:
  * @param {char} *data
  * @param {u_int8_t} *data_len
  * @param {SOCKS5_METHOD_e} methods
@@ -104,5 +104,76 @@ int socks5_server_package_method_reply(char *data, u_int8_t *data_len, const SOC
 
 	*data_len = 2;
 
+	return 0;
+}
+
+/*
+	+----+-----+-------+------+----------+----------+
+	|VER | CMD |  RSV  | ATYP | DST.ADDR | DST.PORT |
+	+----+-----+-------+------+----------+----------+
+	| 1  |  1  | X'00' |  1   | Variable |    2     |
+	+----+-----+-------+------+----------+----------+
+*/
+int socks5_client_package_request(char *data, u_int32_t *data_len, const SOCKS5_CMD_e cmd, const SOCKS5_ATYP_e address_type, const char *dst_addr, const u_int32_t dst_addr_len, const u_int16_t dst_port)
+{
+	char request[256] = {0};
+	u_int32_t len = 0;
+	// VER
+	request[len] = 0x05;
+	// CMD
+	len++;
+	request[len] = cmd;
+	// RSV
+	len++;
+	request[len] = 0x0;
+	// ATYP
+	len++;
+	request[len] = address_type;
+	// DST.ADDR
+	len++;
+	memcpy(&request[len], dst_addr, dst_addr_len);
+	// DST.PORT
+	len += dst_addr_len;
+	memcpy(&request[len], dst_port, sizeof(dst_port));
+	len += sizeof(dst_port);
+
+	memcpy(data, request, len);
+	*data_len = len;
+
+	return 0;
+}
+
+/*
+	+----+-----+-------+------+----------+----------+
+	|VER | REP |  RSV  | ATYP | BND.ADDR | BND.PORT |
+	+----+-----+-------+------+----------+----------+
+	| 1  |  1  | X'00' |  1   | Variable |    2     |
+	+----+-----+-------+------+----------+----------+
+*/
+int socks5_server_package_request_reply(char *data, u_int32_t *data_len, const SOCKS5_REP_e rep, const SOCKS5_ATYP_e address_type, const char *bound_addr, const u_int32_t bound_addr_len, const u_int16_t bound_port)
+{
+	char replies[256] = {0};
+	u_int32_t len = 0;
+	// VER
+	replies[len] = 0x05;
+	// REP
+	len++;
+	replies[len] = rep;
+	// RSV
+	len++;
+	replies[len] = 0x0;
+	// ATYP
+	len++;
+	replies[len] = address_type;
+	// DST.ADDR
+	len++;
+	memcpy(&replies[len], bound_addr, bound_addr_len);
+	// DST.PORT
+	len += bound_addr_len;
+	memcpy(&replies[len], bound_port, sizeof(bound_port));
+	len += sizeof(bound_port);
+
+	memcpy(data, replies, len);
+	*data_len = len;
 	return 0;
 }
