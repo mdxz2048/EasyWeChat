@@ -41,9 +41,9 @@ typedef enum
 
 typedef enum
 {
-    SOCKS5_CMD_CONNECT = 0X00,
-    SOCKS5_CMD_BIND = 0X01,
-    SOCKS5_CMD_UDP = 0X02,
+    SOCKS5_CMD_CONNECT = 0X01,
+    SOCKS5_CMD_BIND = 0X02,
+    SOCKS5_CMD_UDP = 0X03,
 } SOCKS5_CMD_e;
 
 typedef enum
