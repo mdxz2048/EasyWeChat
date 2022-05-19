@@ -2,7 +2,7 @@
  * @Author       : mdxz2048
  * @Date         : 2022-05-17 19:09:03
  * @LastEditors  : lv zhipeng
- * @LastEditTime : 2022-05-18 15:59:15
+ * @LastEditTime : 2022-05-19 16:28:43
  * @FilePath     : /EasyWeChat/src/sock/sock5.c
  * @Description  :
  *
@@ -243,7 +243,7 @@ int socks5_server_package_request_reply(char *data, u_int32_t *data_len, const S
 	}
 	// DST.PORT
 	u_int16_t network_port = htons(reply->bndPort);
-	memcpy(&replies[offset], &network_port, network_port);
+	memcpy(&replies[offset], &network_port, sizeof(network_port));
 	offset += sizeof(network_port);
 
 	memcpy(data, replies, offset);

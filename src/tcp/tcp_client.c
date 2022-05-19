@@ -70,23 +70,23 @@ int tcp_create_client_by_ipv4(uint32_t dst_addr, u_int16_t dst_port)
     if (connect(sockfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)
         error("ERROR connecting");
 
-    /* get message line from the user */
-    printf("Please enter msg: ");
-    bzero(buf, BUFSIZE);
-    fgets(buf, BUFSIZE, stdin);
+    // /* get message line from the user */
+    // printf("Please enter msg: ");
+    // bzero(buf, BUFSIZE);
+    // fgets(buf, BUFSIZE, stdin);
 
-    /* send the message line to the server */
-    n = write(sockfd, buf, strlen(buf));
-    if (n < 0)
-        error("ERROR writing to socket");
+    // /* send the message line to the server */
+    // n = write(sockfd, buf, strlen(buf));
+    // if (n < 0)
+    //     error("ERROR writing to socket");
 
-    /* print the server's reply */
-    bzero(buf, BUFSIZE);
-    n = read(sockfd, buf, BUFSIZE);
-    if (n < 0)
-        error("ERROR reading from socket");
-    printf("Echo from server: %s", buf);
-    close(sockfd);
+    // /* print the server's reply */
+    // bzero(buf, BUFSIZE);
+    // n = read(sockfd, buf, BUFSIZE);
+    // if (n < 0)
+    //     error("ERROR reading from socket");
+    // printf("Echo from server: %s", buf);
+    // close(sockfd);
 
     return sockfd;
 }

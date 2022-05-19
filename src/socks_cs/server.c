@@ -1,7 +1,7 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-03 10:05:56
- * @LastEditTime : 2022-05-18 15:59:44
+ * @LastEditTime : 2022-05-19 16:50:36
  * @LastEditors  : lv zhipeng
  * @Description:
  * @FilePath     : /EasyWeChat/src/socks_cs/server.c
@@ -147,8 +147,9 @@ void server_process_connect_thread(void *sock)
                 req_reply_info.bndAddr = req->dst_addr;
                 req_reply_info.bndPort = req->dst_port;
 
-                char req_reply[128] = {0};
+                char req_reply[256] = {0};
                 u_int32_t req_reply_len = 0;
+                debug_printf("tcp_create_client success");
                 if (socks5_server_package_request_reply(req_reply, &req_reply_len, &req_reply_info) < 0)
                 {
                     debug_printf("socks5_server_package_request_reply() failed.");
@@ -163,15 +164,42 @@ void server_process_connect_thread(void *sock)
                     }
                     else
                     {
-                        bzero(read_buf, sizeof(read_buf));
-                        read_count = recv(sock_client, read_buf, sizeof(read_buf), 0);
-                        if (read_count > 0)
+                        if (fork() == 0)
                         {
-                            debug_printf("recv %s ", read_buf);
+                            char client_buf[1024 * 10] = {0};
+                            u_int32_t client_len = 0;
+                            while (1)
+                            {
+
+                                bzero(client_buf, sizeof(client_buf));
+                                client_len = recv(sock5_client_info.socket_client, client_buf, sizeof(client_buf), 0);
+                                if (client_len > 0)
+                                {
+                                    send(sock5_client_info.socket_dst, client_buf, client_len, 0);
+                                    debug_printf("recv form socket_dst:%s", client_buf);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            char dst_buf[1024 * 10] = {0};
+                            u_int32_t dst_len = 0;
+
+                            while (1)
+                            {
+                                bzero(dst_buf, sizeof(dst_buf));
+                                dst_len = recv(sock5_client_info.socket_dst, dst_buf, sizeof(dst_buf), 0);
+                                if (dst_len > 0)
+                                {
+                                    debug_printf("recv form socket_dst:%s", dst_buf);
+                                    send(sock5_client_info.socket_client, dst_buf, dst_len, 0);
+                                }
+                            }
                         }
                     }
                 }
-            }else 
+            }
+            else
             {
                 debug_printf("tcp_create_client faild.");
             }
