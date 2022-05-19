@@ -1,7 +1,7 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-03 10:05:56
- * @LastEditTime : 2022-05-19 16:50:36
+ * @LastEditTime : 2022-05-19 17:24:20
  * @LastEditors  : lv zhipeng
  * @Description:
  * @FilePath     : /EasyWeChat/src/socks_cs/server.c
@@ -24,10 +24,16 @@
 #include <signal.h>
 #include "tcp_client.h"
 
-#define BUFSIZE 1024
+#define BUFSIZE 1024 * 10
 
 static int socket_server = -1;
 
+typedef struct
+{
+    int socket_src;
+    int socket_dst;
+
+} SOCKS5_SERVER_Data_forward_t;
 /*
  * error - wrapper for perror
  */
@@ -76,6 +82,48 @@ int create_socks5_server_socket(u_int32_t port)
     len = sizeof(cli);
 
     return sockfd;
+}
+
+void data_forward_loop(SOCKS5_SERVER_Data_forward_t *socka_to_sockb)
+{
+    char data_buf[BUFSIZE] = {0};
+    u_int32_t recv_count = 0;
+    bool isOK = true;
+    while (isOK)
+    {
+
+        bzero(data_buf, BUFSIZE);
+        recv_count = recv(socka_to_sockb->socket_src, data_buf, BUFSIZE, 0);
+        if (recv_count > 0)
+        {
+            send(socka_to_sockb->socket_dst, data_buf, recv_count, 0);
+        }
+        else
+        {
+            close(socka_to_sockb->socket_dst);
+            isOK = false;
+        }
+    }
+}
+
+int server_process_data_forward(SOCKS5_CLIENT_INFO_t *sock5_client_info)
+{
+    pthread_t recv, send;
+    void *thread_return = NULL;
+
+    SOCKS5_SERVER_Data_forward_t client_to_dst;
+    SOCKS5_SERVER_Data_forward_t dst_to_client;
+    client_to_dst.socket_src = sock5_client_info->socket_client;
+    client_to_dst.socket_dst = sock5_client_info->socket_dst;
+    pthread_create(&recv, NULL, (void *)data_forward_loop, (void *)&client_to_dst);
+    pthread_detach(recv);
+
+    dst_to_client.socket_src = sock5_client_info->socket_dst;
+    dst_to_client.socket_dst = sock5_client_info->socket_client;
+    pthread_create(&send, NULL, (void *)data_forward_loop, (void *)&dst_to_client);
+    pthread_detach(send);
+    pthread_join(recv, &thread_return);
+    pthread_join(send, &thread_return);
 }
 
 void server_process_connect_thread(void *sock)
@@ -164,38 +212,8 @@ void server_process_connect_thread(void *sock)
                     }
                     else
                     {
-                        if (fork() == 0)
-                        {
-                            char client_buf[1024 * 10] = {0};
-                            u_int32_t client_len = 0;
-                            while (1)
-                            {
 
-                                bzero(client_buf, sizeof(client_buf));
-                                client_len = recv(sock5_client_info.socket_client, client_buf, sizeof(client_buf), 0);
-                                if (client_len > 0)
-                                {
-                                    send(sock5_client_info.socket_dst, client_buf, client_len, 0);
-                                    debug_printf("recv form socket_dst:%s", client_buf);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            char dst_buf[1024 * 10] = {0};
-                            u_int32_t dst_len = 0;
-
-                            while (1)
-                            {
-                                bzero(dst_buf, sizeof(dst_buf));
-                                dst_len = recv(sock5_client_info.socket_dst, dst_buf, sizeof(dst_buf), 0);
-                                if (dst_len > 0)
-                                {
-                                    debug_printf("recv form socket_dst:%s", dst_buf);
-                                    send(sock5_client_info.socket_client, dst_buf, dst_len, 0);
-                                }
-                            }
-                        }
+                        server_process_data_forward(&sock5_client_info);
                     }
                 }
             }

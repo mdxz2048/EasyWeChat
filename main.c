@@ -1,7 +1,7 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-01 17:18:37
- * @LastEditTime : 2022-05-19 16:52:20
+ * @LastEditTime : 2022-05-19 16:58:07
  * @LastEditors  : lv zhipeng
  * @Description:
  * @FilePath     : /EasyWeChat/main.c
@@ -36,13 +36,8 @@ void printf_soft_info()
 int main(int argc, char **argv)
 {
     printf_soft_info();
-    // if (argc < 2)
-    // {
-    //     printf("Please provide a hostname to resolve");
-    //     exit(1);
-    // }
 
-    start_server(6667, SOCKS5_AUTH_PASSWORD,4,"mdxz", 3, "pwd");
+    start_server(6565, SOCKS5_AUTH_PASSWORD,4,"mdxz", 3, "pwd");
 
 
     return 0;
