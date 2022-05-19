@@ -1,7 +1,7 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-01 17:18:37
- * @LastEditTime : 2022-05-18 10:33:00
+ * @LastEditTime : 2022-05-19 15:28:50
  * @LastEditors  : lv zhipeng
  * @Description:
  * @FilePath     : /EasyWeChat/main.c
@@ -42,7 +42,7 @@ int main(int argc, char **argv)
     //     exit(1);
     // }
 
-    start_server(1234, SOCKS5_AUTH_PASSWORD,4,"mdxz", 3, "pwd");
+    start_server(6666, SOCKS5_AUTH_PASSWORD,4,"mdxz", 3, "pwd");
 
 
     return 0;

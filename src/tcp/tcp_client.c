@@ -2,7 +2,7 @@
  * @Author       : lv zhipeng
  * @Date         : 2022-05-18 14:28:38
  * @LastEditors  : lv zhipeng
- * @LastEditTime : 2022-05-18 16:20:49
+ * @LastEditTime : 2022-05-19 15:53:50
  * @FilePath     : /EasyWeChat/src/tcp/tcp_client.c
  * @Description  :
  *
@@ -28,29 +28,65 @@ void error(char *msg)
     exit(0);
 }
 
-int tcp_create_client_by_ipv4(uint32_t addr_ipv4, u_int16_t dst_port)
+int tcp_create_client_by_ipv4(uint32_t dst_addr, u_int16_t dst_port)
 {
     int sockfd, portno, n;
     struct sockaddr_in serveraddr;
     struct hostent *server;
+    char *hostname;
+    char buf[BUFSIZE];
+
+    /* check command line arguments */
+    char *ip;
+    struct in_addr in;
+    in.s_addr = htonl(dst_addr);
+    ip = inet_ntoa(in); //将网络字节序的32位地址转换为点分十进制字符串，通过返回值返回
+    debug_printf("ip :%s", ip);
+    // u_int16_t port = 1234;
+    hostname = ip;
+    portno = dst_port;
 
     /* socket: create the socket */
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
         error("ERROR opening socket");
 
+    /* gethostbyname: get the server's DNS entry */
+    server = gethostbyname(hostname);
+    if (server == NULL)
+    {
+        fprintf(stderr, "ERROR, no such host as %s\n", hostname);
+        return -1;
+    }
+
     /* build the server's Internet address */
+    bzero((char *)&serveraddr, sizeof(serveraddr));
     serveraddr.sin_family = AF_INET;
-    serveraddr.sin_addr = htonl(addr_ipv4);
+    bcopy((char *)server->h_addr,
+          (char *)&serveraddr.sin_addr.s_addr, server->h_length);
     serveraddr.sin_port = htons(portno);
 
     /* connect: create a connection with the server */
     if (connect(sockfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)
-    {
-        debug_printf("connect() failed");
-        close(sockfd);
-        return -1;
-    }
+        error("ERROR connecting");
+
+    /* get message line from the user */
+    printf("Please enter msg: ");
+    bzero(buf, BUFSIZE);
+    fgets(buf, BUFSIZE, stdin);
+
+    /* send the message line to the server */
+    n = write(sockfd, buf, strlen(buf));
+    if (n < 0)
+        error("ERROR writing to socket");
+
+    /* print the server's reply */
+    bzero(buf, BUFSIZE);
+    n = read(sockfd, buf, BUFSIZE);
+    if (n < 0)
+        error("ERROR reading from socket");
+    printf("Echo from server: %s", buf);
+    close(sockfd);
 
     return sockfd;
 }
