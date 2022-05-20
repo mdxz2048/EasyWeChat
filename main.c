@@ -1,7 +1,7 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-01 17:18:37
- * @LastEditTime : 2022-05-20 10:02:56
+ * @LastEditTime : 2022-05-20 10:47:01
  * @LastEditors  : lv zhipeng
  * @Description:
  * @FilePath     : /EasyWeChat/main.c
@@ -39,14 +39,14 @@ int main(int argc, char **argv)
     /*
      * check command line arguments
      */
-    if (argc != 2)
-    {
-        fprintf(stderr, "usage: %s <port>\n", argv[0]);
-        exit(1);
-    }
-    uint32_t portno = atoi(argv[1]);
+    // if (argc != 2)
+    // {
+    //     fprintf(stderr, "usage: %s <port>\n", argv[0]);
+    //     exit(1);
+    // }
+    // uint32_t portno = atoi(argv[1]);
 
-    start_server(portno, SOCKS5_AUTH_PASSWORD,4,"mdxz", 3, "pwd");
+    start_server(5556, SOCKS5_AUTH_PASSWORD,4,"mdxz", 3, "pwd");
     while(1);
 
 

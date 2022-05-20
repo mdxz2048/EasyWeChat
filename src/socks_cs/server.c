@@ -1,7 +1,7 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-03 10:05:56
- * @LastEditTime : 2022-05-20 10:38:38
+ * @LastEditTime : 2022-05-20 11:48:37
  * @LastEditors  : lv zhipeng
  * @Description:
  * @FilePath     : /EasyWeChat/src/socks_cs/server.c
@@ -93,18 +93,31 @@ void data_forward_loop(SOCKS5_SERVER_Data_forward_t *socka_to_sockb)
     char data_buf[BUFSIZE] = {0};
     u_int32_t recv_count = 0;
     bool isOK = true;
+    int socket_src = socka_to_sockb->socket_src;
+    int socket_dst = socka_to_sockb->socket_dst;
+    debug_printf("src = %d dst = %d\n", socket_src, socket_dst);
+    sleep(3);
     while (isOK)
     {
 
         bzero(data_buf, BUFSIZE);
-        recv_count = recv(socka_to_sockb->socket_src, data_buf, BUFSIZE, 0);
+        recv_count = recv(socket_src, data_buf, BUFSIZE, 0);
+        debug_printf("recv: socket[%d] data length %d", socket_src, recv_count);
         if (recv_count > 0)
         {
-            send(socka_to_sockb->socket_dst, data_buf, recv_count, 0);
+            u_int32_t send_count = 0;
+            send(socket_dst, data_buf, recv_count, 0);
+            if (send_count < 0)
+            {
+                close(socket_dst);
+                close(socket_src);
+                isOK = false;
+            }
         }
         else
         {
-            close(socka_to_sockb->socket_dst);
+            close(socket_src);
+            close(socket_dst);
             isOK = false;
         }
     }
@@ -216,6 +229,21 @@ void server_process_connect_thread(void *sock)
                     else
                     {
                         debug_printf("sock_client:[%d] server_process_data_forward start...", sock_client);
+                        // SOCKS5_SERVER_Data_forward_t client_to_dst;
+                        // SOCKS5_SERVER_Data_forward_t dst_to_client;
+                        // client_to_dst.socket_src = sock5_client_info.socket_client;
+                        // client_to_dst.socket_dst = sock5_client_info.socket_dst;
+                        // dst_to_client.socket_src = sock5_client_info.socket_dst;
+                        // dst_to_client.socket_dst = sock5_client_info.socket_client;
+
+                        // if (fork() == 0)
+                        // {
+                        //     data_forward_loop(&client_to_dst);
+                        // }
+                        // else
+                        // {
+                        //     data_forward_loop(&dst_to_client);
+                        // }
                         server_process_data_forward(&sock5_client_info);
                     }
                 }
