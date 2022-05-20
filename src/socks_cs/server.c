@@ -1,7 +1,7 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-03 10:05:56
- * @LastEditTime : 2022-05-20 10:31:24
+ * @LastEditTime : 2022-05-20 10:38:38
  * @LastEditors  : lv zhipeng
  * @Description:
  * @FilePath     : /EasyWeChat/src/socks_cs/server.c
@@ -120,13 +120,13 @@ int server_process_data_forward(SOCKS5_CLIENT_INFO_t *sock5_client_info)
     client_to_dst.socket_src = sock5_client_info->socket_client;
     client_to_dst.socket_dst = sock5_client_info->socket_dst;
     pthread_create(&recv, NULL, (void *)data_forward_loop, (void *)&client_to_dst);
-    pthread_detach(recv);
+    // pthread_detach(recv);
     dst_to_client.socket_src = sock5_client_info->socket_dst;
     dst_to_client.socket_dst = sock5_client_info->socket_client;
     pthread_create(&send, NULL, (void *)data_forward_loop, (void *)&dst_to_client);
-    pthread_detach(send);
-    // pthread_join(recv, &thread_return);
-    // pthread_join(send, &thread_return);
+    // pthread_detach(send);
+    pthread_join(recv, &thread_return);
+    pthread_join(send, &thread_return);
 }
 
 void server_process_connect_thread(void *sock)
