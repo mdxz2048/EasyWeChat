@@ -1,7 +1,7 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-03 10:05:56
- * @LastEditTime : 2022-05-20 09:59:11
+ * @LastEditTime : 2022-05-20 10:31:24
  * @LastEditors  : lv zhipeng
  * @Description:
  * @FilePath     : /EasyWeChat/src/socks_cs/server.c
@@ -56,13 +56,11 @@ int create_socks5_server_socket(u_int32_t port)
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1)
     {
-        printf("socket creation failed...\n");
-        exit(0);
+        debug_printf("create_socks5_server_socket() failed\n");
+        goto error;
     }
-    else
-        printf("Socket successfully created..\n");
-    bzero(&servaddr, sizeof(servaddr));
 
+    bzero(&servaddr, sizeof(servaddr));
     // assign IP, PORT
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -71,23 +69,23 @@ int create_socks5_server_socket(u_int32_t port)
     // Binding newly created socket to given IP and verification
     if ((bind(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr))) != 0)
     {
-        printf("socket bind failed...\n");
-        exit(0);
+        debug_printf("socket bind failed...\n");
+        goto error;
     }
-    else
-        printf("Socket successfully binded..\n");
 
     // Now server is ready to listen and verification
     if ((listen(sockfd, 5)) != 0)
     {
-        printf("Listen failed...\n");
-        exit(0);
+        debug_printf("Listen failed...\n");
+        goto error;
     }
-    else
-        printf("Server listening..\n");
-    len = sizeof(cli);
 
+    len = sizeof(cli);
     return sockfd;
+
+error:
+    close(sockfd);
+    return -1;
 }
 
 void data_forward_loop(SOCKS5_SERVER_Data_forward_t *socka_to_sockb)
@@ -122,12 +120,13 @@ int server_process_data_forward(SOCKS5_CLIENT_INFO_t *sock5_client_info)
     client_to_dst.socket_src = sock5_client_info->socket_client;
     client_to_dst.socket_dst = sock5_client_info->socket_dst;
     pthread_create(&recv, NULL, (void *)data_forward_loop, (void *)&client_to_dst);
-
+    pthread_detach(recv);
     dst_to_client.socket_src = sock5_client_info->socket_dst;
     dst_to_client.socket_dst = sock5_client_info->socket_client;
     pthread_create(&send, NULL, (void *)data_forward_loop, (void *)&dst_to_client);
-    pthread_join(recv, &thread_return);
-    pthread_join(send, &thread_return);
+    pthread_detach(send);
+    // pthread_join(recv, &thread_return);
+    // pthread_join(send, &thread_return);
 }
 
 void server_process_connect_thread(void *sock)
@@ -135,27 +134,22 @@ void server_process_connect_thread(void *sock)
     char read_buf[BUFSIZE] = {0};
     int read_count = 0;
     int ret = 0;
-    int socket_dst = 0;
-
     int sock_client = (int)sock;
-    debug_printf("sock_client = %d\n", sock_client);
 
     uint16_t method_ok = -1;
     SOCKS5_CLIENT_INFO_t sock5_client_info = {0};
-
-    // int flags = fcntl(sock_client, F_GETFL, 0);
-    // fcntl(sock_client, F_SETFL, flags | O_NONBLOCK);
 
     // method and reply to client
     bzero(read_buf, sizeof(read_buf));
     read_count = recv(sock_client, read_buf, sizeof(read_buf), 0);
     if (read_count > 0)
     {
+        debug_printf("sock_client:[%d] recv method:", sock_client);
+        comm_print_hexdump(read_buf, read_count);
         /*check the sock version and method */
         SOCKS5_METHOD_e method = 0;
         if (socks5_server_parse_version_method(&method, read_buf, read_count) < 0)
         {
-            close(sock_client);
             debug_printf("socks5_server_parse_version_method() failed...\n");
             goto err;
         }
@@ -170,7 +164,8 @@ void server_process_connect_thread(void *sock)
             debug_printf("socks5_server_package_method_reply() failed");
             goto err;
         }
-        debug_printf("send method_len = %d\n", method_reply_len);
+        debug_printf("sock_client:[%d] send method_reply:", sock_client);
+        comm_print_hexdump(method_reply, method_reply_len);
         if (send(sock_client, method_reply, method_reply_len, 0) < 0)
         {
             debug_printf("socks5_server_package_method_reply() failed");
@@ -187,6 +182,7 @@ void server_process_connect_thread(void *sock)
     read_count = recv(sock_client, read_buf, sizeof(read_buf), 0);
     if (read_count > 0)
     {
+        debug_printf("sock_client:[%d] recv request:", sock_client);
         comm_print_hexdump(read_buf, read_count);
         SOCKS5_REQUEST_t *req = (SOCKS5_REQUEST_t *)calloc(1, sizeof(SOCKS5_REQUEST_t));
         socks5_server_parse_request(req, read_buf, read_count);
@@ -205,14 +201,13 @@ void server_process_connect_thread(void *sock)
 
                 char req_reply[256] = {0};
                 u_int32_t req_reply_len = 0;
-                debug_printf("tcp_create_client success");
                 if (socks5_server_package_request_reply(req_reply, &req_reply_len, &req_reply_info) < 0)
                 {
                     debug_printf("socks5_server_package_request_reply() failed.");
                 }
                 else
                 {
-                    debug_printf("send request reply:");
+                    debug_printf("sock_client:[%d] send request_reply:", sock_client);
                     comm_print_hexdump(req_reply, req_reply_len);
                     if (send(sock5_client_info.socket_client, req_reply, req_reply_len, 0) < 0)
                     {
@@ -220,7 +215,7 @@ void server_process_connect_thread(void *sock)
                     }
                     else
                     {
-
+                        debug_printf("sock_client:[%d] server_process_data_forward start...", sock_client);
                         server_process_data_forward(&sock5_client_info);
                     }
                 }
@@ -239,8 +234,10 @@ int server_process_connect(int sock_client)
 {
     pthread_t id;
     // server_process_connect_thread(sock_client);
+    SOCKS5_SERVER_PROCESS_CONNECT_t sock;
+    sock.socket = sock_client;
     pthread_create(&id, NULL, (void *)server_process_connect_thread, (void *)sock_client);
-    pthread_detach(id);
+    // pthread_detach(id);
 }
 void server_recv_signal_from_system(int signal_num)
 {
@@ -259,9 +256,9 @@ void start_server(u_int32_t port, SOCKS5_METHOD_e method, u_int8_t username_len,
 
     signal(SIGINT, server_recv_signal_from_system);
     socket_server = create_socks5_server_socket(port);
-    debug_printf("create_socks5_server_socket success.PORT: %d", port);
     if (socket_server > 0)
     {
+        debug_printf("create_socks5_server_socket success.PORT: %d", port);
         char buf[1024 * 10] = {0};
         while (1)
         {
@@ -279,6 +276,7 @@ void start_server(u_int32_t port, SOCKS5_METHOD_e method, u_int8_t username_len,
                 // printf("server established connection with %s (%s)\n",
                 //        hostp->h_name, hostaddrp);
                 debug_printf("server accept the client...\n");
+                //服务端开启线程处理连接
                 server_process_connect(socket_client);
             }
             else
