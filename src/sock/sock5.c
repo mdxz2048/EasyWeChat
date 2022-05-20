@@ -2,7 +2,7 @@
  * @Author       : mdxz2048
  * @Date         : 2022-05-17 19:09:03
  * @LastEditors  : lv zhipeng
- * @LastEditTime : 2022-05-19 16:28:43
+ * @LastEditTime : 2022-05-20 08:45:29
  * @FilePath     : /EasyWeChat/src/sock/sock5.c
  * @Description  :
  *
@@ -77,6 +77,9 @@ int socks5_server_parse_version_method(SOCKS5_METHOD_e *method, const char *data
 		{
 			return -1;
 		}
+	}else 
+	{
+		return -1;
 	}
 
 	return 0;

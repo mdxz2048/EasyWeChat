@@ -1,7 +1,7 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-03 10:05:56
- * @LastEditTime : 2022-05-19 17:24:20
+ * @LastEditTime : 2022-05-20 08:51:33
  * @LastEditors  : lv zhipeng
  * @Description:
  * @FilePath     : /EasyWeChat/src/socks_cs/server.c
@@ -24,7 +24,7 @@
 #include <signal.h>
 #include "tcp_client.h"
 
-#define BUFSIZE 1024 * 10
+#define BUFSIZE 1024 * 20
 
 static int socket_server = -1;
 
@@ -128,7 +128,7 @@ int server_process_data_forward(SOCKS5_CLIENT_INFO_t *sock5_client_info)
 
 void server_process_connect_thread(void *sock)
 {
-    char read_buf[1024 * 10] = {0};
+    char read_buf[BUFSIZE] = {0};
     int read_count = 0;
     int ret = 0;
     int socket_dst = 0;
@@ -148,6 +148,7 @@ void server_process_connect_thread(void *sock)
         SOCKS5_METHOD_e method = 0;
         if (socks5_server_parse_version_method(&method, read_buf, read_count) < 0)
         {
+            close(sock_client);
             debug_printf("socks5_server_parse_version_method() failed...\n");
             goto err;
         }
