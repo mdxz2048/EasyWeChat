@@ -2,7 +2,7 @@
  * @Author       : lv zhipeng
  * @Date         : 2022-05-18 14:28:38
  * @LastEditors  : lv zhipeng
- * @LastEditTime : 2022-05-19 15:53:50
+ * @LastEditTime : 2022-05-20 09:57:11
  * @FilePath     : /EasyWeChat/src/tcp/tcp_client.c
  * @Description  :
  *
@@ -68,7 +68,11 @@ int tcp_create_client_by_ipv4(uint32_t dst_addr, u_int16_t dst_port)
 
     /* connect: create a connection with the server */
     if (connect(sockfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)
-        error("ERROR connecting");
+    {
+        perror("connect");
+        close(sockfd);
+        return -1;
+    }
 
     // /* get message line from the user */
     // printf("Please enter msg: ");

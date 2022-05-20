@@ -2,7 +2,7 @@
  * @Author       : mdxz2048
  * @Date         : 2022-05-17 19:09:03
  * @LastEditors  : lv zhipeng
- * @LastEditTime : 2022-05-20 08:45:29
+ * @LastEditTime : 2022-05-20 09:18:22
  * @FilePath     : /EasyWeChat/src/sock/sock5.c
  * @Description  :
  *
@@ -205,7 +205,7 @@ int socks5_server_parse_request(SOCKS5_REQUEST_t *req, const char *data, const u
 	if (req->atyp == SOCKS5_ATYP_DOMAIN)
 		debug_printf("req:\nversion:0x%x\ncmd:0x%x\naddress_type:0x%x\naddr:%s\nport:%d\n", req->version, req->cmd, req->atyp, req->dst_addr.addr_domain.domain, req->dst_port);
 	else
-		debug_printf("req:\nversion:0x%x\ncmd:0x%x\naddress_type:0x%d\naddr:%ld\nport:%d\n", req->version, req->cmd, req->atyp, req->dst_addr.addr_ipv4, req->dst_port);
+		debug_printf("req:\nversion:0x%x\ncmd:0x%x\naddress_type:0x%d\naddr:%d\nport:%d\n", req->version, req->cmd, req->atyp, req->dst_addr.addr_ipv4, req->dst_port);
 
 	return 0;
 }

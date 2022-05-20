@@ -1,7 +1,7 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-01 17:18:37
- * @LastEditTime : 2022-05-20 08:42:22
+ * @LastEditTime : 2022-05-20 10:02:56
  * @LastEditors  : lv zhipeng
  * @Description:
  * @FilePath     : /EasyWeChat/main.c
@@ -47,6 +47,7 @@ int main(int argc, char **argv)
     uint32_t portno = atoi(argv[1]);
 
     start_server(portno, SOCKS5_AUTH_PASSWORD,4,"mdxz", 3, "pwd");
+    while(1);
 
 
     return 0;

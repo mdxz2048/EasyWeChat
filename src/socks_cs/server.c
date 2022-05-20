@@ -1,7 +1,7 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-03 10:05:56
- * @LastEditTime : 2022-05-20 08:51:33
+ * @LastEditTime : 2022-05-20 09:59:11
  * @LastEditors  : lv zhipeng
  * @Description:
  * @FilePath     : /EasyWeChat/src/socks_cs/server.c
@@ -34,6 +34,12 @@ typedef struct
     int socket_dst;
 
 } SOCKS5_SERVER_Data_forward_t;
+
+typedef struct
+{
+    int socket;
+} SOCKS5_SERVER_PROCESS_CONNECT_t;
+
 /*
  * error - wrapper for perror
  */
@@ -116,12 +122,10 @@ int server_process_data_forward(SOCKS5_CLIENT_INFO_t *sock5_client_info)
     client_to_dst.socket_src = sock5_client_info->socket_client;
     client_to_dst.socket_dst = sock5_client_info->socket_dst;
     pthread_create(&recv, NULL, (void *)data_forward_loop, (void *)&client_to_dst);
-    pthread_detach(recv);
 
     dst_to_client.socket_src = sock5_client_info->socket_dst;
     dst_to_client.socket_dst = sock5_client_info->socket_client;
     pthread_create(&send, NULL, (void *)data_forward_loop, (void *)&dst_to_client);
-    pthread_detach(send);
     pthread_join(recv, &thread_return);
     pthread_join(send, &thread_return);
 }
@@ -132,7 +136,10 @@ void server_process_connect_thread(void *sock)
     int read_count = 0;
     int ret = 0;
     int socket_dst = 0;
+
     int sock_client = (int)sock;
+    debug_printf("sock_client = %d\n", sock_client);
+
     uint16_t method_ok = -1;
     SOCKS5_CLIENT_INFO_t sock5_client_info = {0};
 
