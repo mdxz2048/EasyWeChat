@@ -1,10 +1,10 @@
 /*
  * @Author: MDXZ
  * @Date: 2022-05-03 10:05:56
- * @LastEditTime : 2022-05-20 11:48:37
- * @LastEditors  : lv zhipeng
+ * @LastEditTime : 2022-05-22 11:42:03
+ * @LastEditors  : mdxz2048
  * @Description:
- * @FilePath     : /EasyWeChat/src/socks_cs/server.c
+ * @FilePath     : /EasyWechat/src/socks_cs/server.c
  *
  */
 
@@ -96,7 +96,6 @@ void data_forward_loop(SOCKS5_SERVER_Data_forward_t *socka_to_sockb)
     int socket_src = socka_to_sockb->socket_src;
     int socket_dst = socka_to_sockb->socket_dst;
     debug_printf("src = %d dst = %d\n", socket_src, socket_dst);
-    sleep(3);
     while (isOK)
     {
 
@@ -109,18 +108,20 @@ void data_forward_loop(SOCKS5_SERVER_Data_forward_t *socka_to_sockb)
             send(socket_dst, data_buf, recv_count, 0);
             if (send_count < 0)
             {
-                close(socket_dst);
-                close(socket_src);
-                isOK = false;
+                // close(socket_dst);
+                // close(socket_src);
+                // isOK = false;
             }
         }
         else
         {
-            close(socket_src);
-            close(socket_dst);
-            isOK = false;
+            // close(socket_src);
+            // close(socket_dst);
+            // isOK = false;
         }
     }
+    debug_printf("exit src:%d", socket_src);
+    exit(0);
 }
 
 int server_process_data_forward(SOCKS5_CLIENT_INFO_t *sock5_client_info)
@@ -208,8 +209,16 @@ void server_process_connect_thread(void *sock)
                 req_reply_info.version = 0x05;
                 req_reply_info.rep = SOCKS5_REP_SUCCEEDED;
                 req_reply_info.rsv = 0;
-                req_reply_info.atyp = req->atyp;
-                req_reply_info.bndAddr = req->dst_addr;
+                // get bnd addr and port from socketdst
+                struct sockaddr_in bnd_addr = {0};
+                socklen_t bnd_addr_len = 0;
+                if (getsockname(sock5_client_info.socket_dst, (struct sockaddr *)&bnd_addr, &bnd_addr_len) < 0)
+                {
+                    perror("getsockname");
+                    goto err;
+                }
+                req_reply_info.atyp = SOCKS5_ATYP_IPv4;
+                req_reply_info.bndAddr.addr_ipv4 = bnd_addr.sin_addr.s_addr;
                 req_reply_info.bndPort = req->dst_port;
 
                 char req_reply[256] = {0};
